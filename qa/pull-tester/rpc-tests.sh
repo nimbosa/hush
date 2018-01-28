@@ -11,6 +11,7 @@ export BITCOIND=${REAL_BITCOIND}
 #Run the tests
 
 testScripts=(
+    'paymentdisclosure.py'
     'prioritisetransaction.py'
     'wallet_treestate.py'
     'wallet_protectcoinbase.py'
@@ -38,6 +39,9 @@ testScripts=(
     'key_import_export.py'
     'nodehandling.py'
     'reindex.py'
+    'addressindex.py'
+    'timestampindex.py'
+    'spentindex.py'
     'decodescript.py'
     'disablewallet.py'
     'zcjoinsplit.py'
@@ -85,7 +89,7 @@ function runTestScript
 
     echo -e "=== Running testscript ${testName} ==="
 
-    if eval "$@" | sed 's/^/  /'
+    if eval "$@"
     then
         successCount=$(expr $successCount + 1)
         echo "--- Success: ${testName} ---"

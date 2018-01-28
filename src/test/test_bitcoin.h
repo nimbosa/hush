@@ -1,6 +1,7 @@
 #ifndef BITCOIN_TEST_TEST_BITCOIN_H
 #define BITCOIN_TEST_TEST_BITCOIN_H
 
+#include "chainparamsbase.h"
 #include "pubkey.h"
 #include "txdb.h"
 
@@ -17,11 +18,17 @@ struct BasicTestingSetup {
     ~BasicTestingSetup();
 };
 
+// Setup w.r.t. zk-SNARK API
+struct JoinSplitTestingSetup: public BasicTestingSetup {
+    JoinSplitTestingSetup();
+    ~JoinSplitTestingSetup();
+};
+
 /** Testing setup that configures a complete environment.
  * Included are data directory, coins database, script check threads
  * and wallet (if enabled) setup.
  */
-struct TestingSetup: public BasicTestingSetup {
+struct TestingSetup: public JoinSplitTestingSetup {
     CCoinsViewDB *pcoinsdbview;
     boost::filesystem::path pathTemp;
     boost::thread_group threadGroup;

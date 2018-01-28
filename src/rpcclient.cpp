@@ -96,6 +96,16 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "prioritisetransaction", 2 },
     { "setban", 2 },
     { "setban", 3 },
+
+    { "getblockhashes", 0 },
+    { "getblockhashes", 1 },
+    { "getblockhashes", 2 },
+    { "getspentinfo", 0},
+    { "getaddresstxids", 0},
+    { "getaddressbalance", 0},
+    { "getaddressdeltas", 0},
+    { "getaddressutxos", 0},
+    { "getaddressmempool", 0},
     { "zcrawjoinsplit", 1 },
     { "zcrawjoinsplit", 2 },
     { "zcrawjoinsplit", 3 },
@@ -110,9 +120,12 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_sendmany", 2},
     { "z_sendmany", 3},
     { "z_shieldcoinbase", 2},
+    { "z_shieldcoinbase", 3},
     { "z_getoperationstatus", 0},
     { "z_getoperationresult", 0},
     { "z_importkey", 2 },
+    { "z_getpaymentdisclosure", 1},
+    { "z_getpaymentdisclosure", 2}
 };
 
 class CRPCConvertTable

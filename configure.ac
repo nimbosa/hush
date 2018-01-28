@@ -2,13 +2,14 @@ dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 1)
 define(_CLIENT_VERSION_MINOR, 0)
-define(_CLIENT_VERSION_REVISION, 12)
+define(_CLIENT_VERSION_REVISION, 13)
 define(_CLIENT_VERSION_BUILD, 50)
 define(_ZC_BUILD_VAL, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, m4_incr(_CLIENT_VERSION_BUILD), m4_eval(_CLIENT_VERSION_BUILD < 50), 1, m4_eval(_CLIENT_VERSION_BUILD - 24), m4_eval(_CLIENT_VERSION_BUILD == 50), 1, , m4_eval(_CLIENT_VERSION_BUILD - 50)))
 define(_CLIENT_VERSION_SUFFIX, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, _CLIENT_VERSION_REVISION-beta$1, m4_eval(_CLIENT_VERSION_BUILD < 50), 1, _CLIENT_VERSION_REVISION-rc$1, m4_eval(_CLIENT_VERSION_BUILD == 50), 1, _CLIENT_VERSION_REVISION, _CLIENT_VERSION_REVISION-$1)))
 define(_CLIENT_VERSION_IS_RELEASE, true)
 define(_COPYRIGHT_YEAR, 2017)
-AC_INIT([Zcash],[_CLIENT_VERSION_MAJOR._CLIENT_VERSION_MINOR._CLIENT_VERSION_SUFFIX(_ZC_BUILD_VAL)],[https://github.com/zcash/zcash/issues],[zcash])
+AC_INIT([Hush],[_CLIENT_VERSION_MAJOR._CLIENT_VERSION_MINOR._CLIENT_VERSION_SUFFIX(_ZC_BUILD_VAL)],[https://github.com/MyHush/hush/issues],[hush])
+
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADERS([src/config/bitcoin-config.h])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -24,7 +25,7 @@ dnl faketime breaks configure and is only needed for make. Disable it here.
 unset FAKETIME
 
 dnl Automake init set-up and checks
-AM_INIT_AUTOMAKE([no-define subdir-objects foreign])
+AM_INIT_AUTOMAKE([no-define subdir-objects foreign tar-pax])
 
 dnl faketime messes with timestamps and causes configure to be re-run.
 dnl --disable-maintainer-mode can be used to bypass this.
@@ -40,7 +41,8 @@ else
   CXXFLAGS_overridden=no
 fi
 
-# Zcash requries C++11 compatibility; set it early:
+# Hush requries C++11 compatibility; set it early:
+
 CXXFLAGS="-std=c++11 $CXXFLAGS"
 
 AC_PROG_CXX
@@ -187,7 +189,7 @@ CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS"
 
 AC_ARG_WITH([utils],
   [AS_HELP_STRING([--with-utils],
-  [build zcash-cli zcash-tx (default=yes)])],
+  [build hush-cli hush-tx wallet-utility (default=yes)])],
   [build_bitcoin_utils=$withval],
   [build_bitcoin_utils=yes])
 
@@ -757,28 +759,20 @@ AC_CHECK_LIB([gmp],[[__gmpn_sub_n]],GMP_LIBS=-lgmp, [AC_MSG_ERROR(libgmp missing
 AC_CHECK_HEADER([gmpxx.h],,AC_MSG_ERROR(libgmpxx headers missing))
 AC_CHECK_LIB([gmpxx],[main],GMPXX_LIBS=-lgmpxx, [AC_MSG_ERROR(libgmpxx missing)])
 
-# libsnark header layout is broken unless cpp's -I is passed with the
-# libsnark directory, so for now we use this hideous workaround:
-echo 'Hunting for libsnark include directory...'
-[LIBSNARK_INCDIR="$(echo "$CPPFLAGS" | sed 's,^.*-I\([^ ]*/include\).*$,\1/libsnark,')"]
-if test -d "$LIBSNARK_INCDIR"; then
-   echo "Found libsnark include directory: $LIBSNARK_INCDIR"
-else
-    AC_MSG_ERROR(libsnark include directory not found)
-fi
-
-CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
-
-# Now check for libsnark compilability using traditional autoconf tests:
-AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
-AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)], [-lgmpxx])
-
 RUST_LIBS=""
 if test x$enable_rust != xno; then
   RUST_LIBS="-lrustzcash"
 fi
 
-LIBZCASH_LIBS="-lsnark -lgmp -lgmpxx -lboost_system-mt -lcrypto -lsodium -fopenmp $RUST_LIBS"
+# Gitian uses a config.site that sets depends_prefix, and then sets --prefix=/
+# build.sh just uses --prefix
+if test x$depends_prefix != x; then
+  LIBSNARK_DEPINST="$depends_prefix"
+else
+  LIBSNARK_DEPINST="$prefix"
+fi
+
+LIBZCASH_LIBS="-lgmp -lgmpxx -lboost_system-mt -lcrypto -lsodium -fopenmp $RUST_LIBS"
 
 CXXFLAGS_TEMP="$CXXFLAGS"
 LIBS_TEMP="$LIBS"
@@ -792,7 +786,7 @@ AC_MSG_CHECKING([whether to build bitcoind])
 AM_CONDITIONAL([BUILD_BITCOIND], [test x$build_bitcoind = xyes])
 AC_MSG_RESULT($build_bitcoind)
 
-AC_MSG_CHECKING([whether to build utils (zcash-cli zcash-tx)])
+AC_MSG_CHECKING([whether to build utils (hush-cli hush-tx wallet-utility)])
 AM_CONDITIONAL([BUILD_BITCOIN_UTILS], [test x$build_bitcoin_utils = xyes])
 AC_MSG_RESULT($build_bitcoin_utils)
 
@@ -913,7 +907,7 @@ AC_SUBST(TESTDEFS)
 AC_SUBST(LEVELDB_TARGET_FLAGS)
 AC_SUBST(GMP_LIBS)
 AC_SUBST(GMPXX_LIBS)
-AC_SUBST(LIBSNARK_LIBS)
+AC_SUBST(LIBSNARK_DEPINST)
 AC_SUBST(LIBZCASH_LIBS)
 AC_SUBST(PROTON_LIBS)
 AC_CONFIG_FILES([Makefile src/Makefile doc/man/Makefile share/setup.nsi src/test/buildenv.py])
@@ -944,7 +938,7 @@ unset PKG_CONFIG_LIBDIR
 PKG_CONFIG_LIBDIR="$PKGCONFIG_LIBDIR_TEMP"
 
 ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-module-recovery"
-AC_CONFIG_SUBDIRS([src/secp256k1 src/univalue])
+AC_CONFIG_SUBDIRS([src/secp256k1 src/snark src/univalue])
 
 AC_OUTPUT
 

@@ -246,7 +246,8 @@ UniValue stop(const UniValue& params, bool fHelp)
         throw runtime_error(
             "stop\n"
             "\nStop Hush server.");
-    // Shutdown will take long enough that the response should get back
+    // Event loop will exit after current HTTP requests have been handled, so
+    // this reply will get back to the client.
     StartShutdown();
     return "Hush server stopping";
 }
@@ -280,6 +281,8 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true  },
     { "blockchain",         "getblockcount",          &getblockcount,          true  },
     { "blockchain",         "getblock",               &getblock,               true  },
+    { "blockchain",         "getblockdeltas",         &getblockdeltas,         false },
+    { "blockchain",         "getblockhashes",         &getblockhashes,         true  },
     { "blockchain",         "getblockhash",           &getblockhash,           true  },
     { "blockchain",         "getblockheader",         &getblockheader,         true  },
     { "blockchain",         "getchaintips",           &getchaintips,           true  },
@@ -291,6 +294,7 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "verifytxoutproof",       &verifytxoutproof,       true  },
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
+    { "blockchain",         "getspentinfo",           &getspentinfo,           false },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -319,6 +323,13 @@ static const CRPCCommand vRPCCommands[] =
 #ifdef ENABLE_WALLET
     { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false },
 #endif
+
+    /* Address index */
+    { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
+    { "addressindex",       "getaddressutxos",        &getaddressutxos,        false },
+    { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false },
+    { "addressindex",       "getaddresstxids",        &getaddresstxids,        false },
+    { "addressindex",       "getaddressbalance",      &getaddressbalance,      false },
 
     /* Utility functions */
     { "util",               "createmultisig",         &createmultisig,         true  },
@@ -395,7 +406,11 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_exportkey",            &z_exportkey,            true  },
     { "wallet",             "z_importkey",            &z_importkey,            true  },
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
-    { "wallet",             "z_importwallet",         &z_importwallet,         true  }
+    { "wallet",             "z_importwallet",         &z_importwallet,         true  },
+
+    // TODO: rearrange into another category
+    { "disclosure",         "z_getpaymentdisclosure", &z_getpaymentdisclosure, true  },
+    { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
 #endif // ENABLE_WALLET
 };
 
